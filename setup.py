@@ -22,6 +22,7 @@ setup(
     ],
     python_requires=">=3.8",
     author='Ostix',
+    license='MIT',
     packages=find_packages(),
     install_requires=requirements,
 )
