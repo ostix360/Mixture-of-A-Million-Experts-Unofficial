@@ -3,6 +3,20 @@ Trying to implement https://arxiv.org/abs/2407.04153
 
 ## Quick Start
 
+### Install the package
+
+```bash
+pip install git+https://github.com/ostix360/Mixture-of-A-Million-Experts-Unofficial.git
+```
+
+### Test the implementation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/ostix360/Mixture-of-A-Million-Experts-Unofficial.git
+```
+
 Install the required packages using the following command:
 
 ```bash
@@ -20,7 +34,7 @@ python test.py
 - [x] Implement and test PEER layer
 - [x] Add batch norm
 - [ ] Test training
-- [ ] Make it as package
+- [x] Make it as package
 - [ ] Add custom kernel
 - [ ] Add GLU / gate to the PEER layer
 
