@@ -58,8 +58,8 @@ Train loss at the last step is 4.49 and train loss given by transformer's traine
 
 ### Conclusion
 
-The tow first test consume a lot more memory i.e. 3 times at least than the third test. The third test is the most efficient in terms of memory consumption and computation.
-And also in term of time (7 times)
+The tow first tests consume a lot more memory i.e. 3 times at least than the third one (the baseline). The third test is the most efficient in terms of memory consumption and computation.
+And also in terms of time (7 times faster)
 
 ## TODO
 
