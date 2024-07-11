@@ -54,7 +54,8 @@ Train loss at the last step is 4.53 and train loss given by transformer's traine
 - [x] Test training
 - [x] Make it as package
 - [ ] Add custom kernel
-- [ ] Add GLU / gate to the PEER layer
+- [x] Add GLU / gate to the PEER layer
+- [ ] Validate the implementation by testing base line
 
 
 ## Contributing
