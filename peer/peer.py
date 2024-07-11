@@ -31,6 +31,7 @@ class PEERBlock(nn.Module):
             key_dim: int,
             batch_norm: bool = True,
             hidden_act: nn.Module = nn.ReLU(),
+            glu: bool = False,
     ):
         """
         Initialize the PEER block
@@ -52,8 +53,10 @@ class PEERBlock(nn.Module):
         assert math.sqrt(self.num_experts).is_integer(), '`num_experts` needs to be a perfect square'
         self.num_keys = int(math.sqrt(self.num_experts))
         self.k_dim = key_dim
+        self.glu = glu
         self.w_up_embed = nn.Embedding(self.num_experts, self.hidden_size)
         self.w_down_embed = nn.Embedding(self.num_experts, self.hidden_size)
+        self.w_gate_embed = nn.Embedding(self.num_experts, self.hidden_size)
         self.act_fn = hidden_act
         self.initialize_keys()
         # query network # copied from https://github.com/facebookresearch/XLM/blob/main/PKM-layer.ipynb
@@ -153,10 +156,12 @@ class PEERBlock(nn.Module):
             sequence_length,
         )
         w_up = self.w_up_embed(indices)
-        w_down = self.w_down_embed(indices)
+        if self.glu:
+            w_down = self.w_down_embed(indices)
+        w_gate = self.w_gate_embed(indices)
         hidden_states = hidden_states.reshape(batch_size, sequence_length, hidden_dim)
         hidden_states = einsum(hidden_states, w_down, "b t d , b t h k d -> b t h k ")
-        hidden_states = self.act_fn(hidden_states)
+        hidden_states = self.act_fn(hidden_states) * w_gate if self.glu else self.act_fn(hidden_states)
         hidden_states = hidden_states * F.softmax(scores, dim=-1)
         hidden_states = einsum(hidden_states, w_up, "b t h k, b t h k d -> b t d")
         return hidden_states, all_scores
