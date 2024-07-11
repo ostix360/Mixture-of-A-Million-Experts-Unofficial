@@ -33,10 +33,11 @@ python test.py
 
 - [x] Implement and test PEER layer
 - [x] Add batch norm
-- [ ] Test training
+- [x] Test training
 - [x] Make it as package
 - [ ] Add custom kernel
 - [ ] Add GLU / gate to the PEER layer
+
 
 ## Contributing
 

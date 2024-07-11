@@ -130,10 +130,10 @@ class PEERBlock(nn.Module):
         outputs = [self._get_indices(query[:, i], self.keys[i], self.num_experts_per_tok) for i in range(self.heads)]
         s = torch.cat([s.view(bs, 1, self.num_experts_per_tok) for _, s, _ in outputs], 1)  # (bs,heads,knn)
         i = torch.cat([i.view(bs, 1, self.num_experts_per_tok) for i, _, _ in outputs], 1)  # (bs,heads,knn)
-        all_scores = torch.cat([a.view(bs, -1) for _, _, a in outputs], 1)
+        all_scores = torch.cat([a.view(bs, 1, self.num_experts_per_tok ** 2) for _, _, a in outputs], 1)
         i = einops.rearrange(i, "(b t) h k -> b t h k", b=bsz, t=seq_len)
         s = einops.rearrange(s, "(b t) h k -> b t h k", b=bsz, t=seq_len)
-        return i, s, all_scores
+        return i, s, all_scores.view(-1, self.num_experts_per_tok ** 2)
 
     # Algorithm from the paper
     def forward(self, hidden_states: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:

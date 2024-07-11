@@ -76,7 +76,7 @@ _CONFIG_FOR_DOC = "MixtralConfig"
 
 
 def load_balancing_loss_func(
-        gate_logits: torch.Tensor, num_experts: torch.Tensor = None, top_k=2,
+        gate_logits: torch.Tensor, num_experts: int = None, top_k=2,
         attention_mask: Optional[torch.Tensor] = None
 ) -> float:
     r"""
@@ -106,11 +106,13 @@ def load_balancing_loss_func(
         compute_device = gate_logits[0].device
         concatenated_gate_logits = torch.cat([layer_gate.to(compute_device) for layer_gate in gate_logits], dim=0)
 
-    routing_weights = torch.nn.functional.softmax(concatenated_gate_logits, dim=-1)
 
-    _, selected_experts = torch.topk(routing_weights, top_k, dim=-1)
 
-    expert_mask = torch.nn.functional.one_hot(selected_experts, num_experts)
+    _, selected_experts = torch.topk(concatenated_gate_logits, top_k, dim=-1)
+
+    routing_weights = F.softmax(concatenated_gate_logits, dim=-1)
+
+    expert_mask = F.one_hot(selected_experts, num_experts)  # Consume a lot of memory
 
     if attention_mask is None:
         # Compute the percentage of tokens routed to each experts
@@ -875,10 +877,10 @@ class PEERBlock(nn.Module):
         outputs = [self._get_indices(query[:, i], self.keys[i], self.num_experts_per_tok) for i in range(self.heads)]
         s = torch.cat([s.view(bs, 1, self.num_experts_per_tok) for _, s, _ in outputs], 1)  # (bs,heads,knn)
         i = torch.cat([i.view(bs, 1, self.num_experts_per_tok) for i, _, _ in outputs], 1)  # (bs,heads,knn)
-        all_scores = torch.cat([a.view(bs, -1) for _, _, a in outputs], 1)
+        all_scores = torch.cat([a.view(bs, 1, self.num_experts_per_tok ** 2) for _, _, a in outputs], 1)
         i = einops.rearrange(i, "(b t) h k -> b t h k", b=bsz, t=seq_len)
         s = einops.rearrange(s, "(b t) h k -> b t h k", b=bsz, t=seq_len)
-        return i, s, all_scores
+        return i, s, all_scores.view(-1, self.num_experts_per_tok ** 2)
 
     # Algorithm from the paper
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
@@ -1485,26 +1487,15 @@ class MixtralForCausalLM(MixtralPreTrainedModel):
             shift_labels = shift_labels.to(shift_logits.device)
             loss = loss_fct(shift_logits, shift_labels)
 
-        aux_loss = None
-        if output_router_logits:
-            aux_loss = load_balancing_loss_func(
-                outputs.router_logits if return_dict else outputs[-1],
-                self.num_experts ** 2,
-                self.num_experts_per_tok,
-                attention_mask,
-            )
-            if labels is not None:
-                loss += self.router_aux_loss_coef * aux_loss.to(loss.device)  # make sure to reside in the same device
-
         if not return_dict:
             output = (logits,) + outputs[1:]
             if output_router_logits:
-                output = (aux_loss,) + output
+                output = (0,) + output
             return (loss,) + output if loss is not None else output
 
         return MoeCausalLMOutputWithPast(
             loss=loss,
-            aux_loss=aux_loss,
+            aux_loss=0,
             logits=logits,
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
