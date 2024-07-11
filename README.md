@@ -29,6 +29,16 @@ Run the following command to test the implementation:
 python test.py
 ```
 
+## Tests
+
+### Test 1
+
+The model has 22.2M parameters
+
+The first test doesn't use glu and uses num_experts_per_tok=30, num_local_experts=36.
+
+Train loss at the last step is 4.58
+
 ## TODO
 
 - [x] Implement and test PEER layer
