@@ -47,6 +47,20 @@ The second test uses glu and uses num_experts_per_tok=26, num_local_experts=30.
 
 Train loss at the last step is 4.53 and train loss given by transformer's trainer 5.34
 
+
+### Test 3 (baseline)
+
+The model has 22.0M parameters
+
+The third test uses glu and uses num_experts_per_tok=2, num_local_experts=4. (intermediate_size=256)
+
+Train loss at the last step is 4.49 and train loss given by transformer's trainer 5.35
+
+### Conclusion
+
+The tow first test consume a lot more memory i.e. 3 times at least than the third test. The third test is the most efficient in terms of memory consumption and computation.
+And also in term of time (7 times)
+
 ## TODO
 
 - [x] Implement and test PEER layer
@@ -55,7 +69,7 @@ Train loss at the last step is 4.53 and train loss given by transformer's traine
 - [x] Make it as package
 - [ ] Add custom kernel
 - [x] Add GLU / gate to the PEER layer
-- [ ] Validate the implementation by testing base line
+- [x] Validate the implementation by testing base line
 
 
 ## Contributing
