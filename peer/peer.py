@@ -160,8 +160,9 @@ class PEERBlock(nn.Module):
             w_down = self.w_down_embed(indices)
         w_gate = self.w_gate_embed(indices)
         hidden_states = hidden_states.reshape(batch_size, sequence_length, hidden_dim)
+        gate = einsum(hidden_states, w_gate, "b t d , b t h k d -> b t h k ")
         hidden_states = einsum(hidden_states, w_down, "b t d , b t h k d -> b t h k ")
-        hidden_states = self.act_fn(hidden_states) * w_gate if self.glu else self.act_fn(hidden_states)
+        hidden_states = self.act_fn(hidden_states) * gate if self.glu else self.act_fn(hidden_states)
         hidden_states = hidden_states * F.softmax(scores, dim=-1)
         hidden_states = einsum(hidden_states, w_up, "b t h k, b t h k d -> b t d")
         return hidden_states, all_scores
