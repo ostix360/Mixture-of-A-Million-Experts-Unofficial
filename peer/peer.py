@@ -56,7 +56,8 @@ class PEERBlock(nn.Module):
         self.glu = glu
         self.w_up_embed = nn.Embedding(self.num_experts, self.hidden_size)
         self.w_down_embed = nn.Embedding(self.num_experts, self.hidden_size)
-        self.w_gate_embed = nn.Embedding(self.num_experts, self.hidden_size)
+        if self.glu:
+            self.w_gate_embed = nn.Embedding(self.num_experts, self.hidden_size)
         self.act_fn = hidden_act
         self.initialize_keys()
         # query network # copied from https://github.com/facebookresearch/XLM/blob/main/PKM-layer.ipynb
@@ -156,11 +157,11 @@ class PEERBlock(nn.Module):
             sequence_length,
         )
         w_up = self.w_up_embed(indices)
-        if self.glu:
-            w_down = self.w_down_embed(indices)
+        w_down = self.w_down_embed(indices)
         w_gate = self.w_gate_embed(indices)
         hidden_states = hidden_states.reshape(batch_size, sequence_length, hidden_dim)
-        gate = einsum(hidden_states, w_gate, "b t d , b t h k d -> b t h k ")
+        if self.glu:
+            gate = einsum(hidden_states, w_gate, "b t d , b t h k d -> b t h k ")
         hidden_states = einsum(hidden_states, w_down, "b t d , b t h k d -> b t h k ")
         hidden_states = self.act_fn(hidden_states) * gate if self.glu else self.act_fn(hidden_states)
         hidden_states = hidden_states * F.softmax(scores, dim=-1)
